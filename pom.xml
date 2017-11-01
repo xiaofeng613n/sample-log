@@ -12,6 +12,7 @@
         <module>log-portal</module>
         <module>log-common</module>
         <module>log-core</module>
+        <module>log-flume</module>
     </modules>
 
 
