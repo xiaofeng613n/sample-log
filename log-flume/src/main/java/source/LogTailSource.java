@@ -1,5 +1,7 @@
 package source;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import org.apache.flume.Context;
 import org.apache.flume.Event;
 import org.apache.flume.EventDrivenSource;
@@ -22,18 +24,29 @@ public class LogTailSource extends AbstractSource implements Configurable,EventD
 
 	private String positionFile;
 
+	private String watchDirs;
+
 	private ExecutorService executorService = Executors.newScheduledThreadPool(1);
 
 	public void configure(Context context)
 	{
 		logger.info("");
+		positionFile = context.getString("positionFile");
+		watchDirs = context.getString("watchDirs");
+		ImmutableMap<String, String> m =  context.getSubProperties("watchDirs." + watchDirs + ".");
+		watchDirs = "D:/atempData";
 	}
 
 	@Override
 	public synchronized void start()
 	{
 		super.start();
-		PositionFileManager positionFileManager = new PositionFileManager();
+		PositionFileManager positionFileManager = null;
+		try {
+			positionFileManager = new PositionFileManager(positionFile, Lists.newArrayList(watchDirs));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		LogReaderWorker logReaderWorker = new LogReaderWorker(positionFileManager,getChannelProcessor());
 		LogWatcher logWatcher = new LogWatcher(positionFileManager,logReaderWorker);
 
@@ -51,19 +64,28 @@ public class LogTailSource extends AbstractSource implements Configurable,EventD
 
 		});
 */
-//		try
-//		{
-//			logReaderWorker.fireAllFileReadEvent();
-//			positionFileManager.syncDisk();
-//			logWatcher.reloadLogFiles();
-//		}
-//		catch (IOException e)
-//		{
-//			e.printStackTrace();
-//		}
-//
-//		logReaderWorker.start();
-		getChannelProcessor().processEvent(new Event()
+		try {
+			logWatcher.reloadLogFiles();
+
+			logReaderWorker.fireAllFileReadEvent();
+			positionFileManager.syncDisk();
+			logWatcher.reloadLogFiles();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		try
+		{
+			logReaderWorker.fireAllFileReadEvent();
+			positionFileManager.syncDisk();
+			logWatcher.reloadLogFiles();
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+
+		logReaderWorker.start();
+		/*getChannelProcessor().processEvent(new Event()
 		{
 			@Override
 			public Map<String, String> getHeaders()
@@ -88,7 +110,7 @@ public class LogTailSource extends AbstractSource implements Configurable,EventD
 			{
 
 			}
-		});
+		});*/
 	}
 
 	@Override

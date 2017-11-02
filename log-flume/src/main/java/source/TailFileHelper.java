@@ -84,8 +84,9 @@ public class TailFileHelper
         if(Strings.isNullOrEmpty(regular)){
             return true;
         }
-        Matcher res = Pattern.compile(regular, Pattern.CASE_INSENSITIVE).matcher(fileName);
-        return res.find();
+      //  Matcher res = Pattern.compile(regular, Pattern.CASE_INSENSITIVE).matcher(fileName);
+        //return res.find();
+        return true;
     }
 
     public static boolean containsFileName(String fileName, List<String> filterList) {

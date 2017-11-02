@@ -8,8 +8,9 @@ public class LogTailSourceTest
 {
 	public static void main(String[] args)
 	{
-		String[] conf = new String[]{"-nagent1","-no-reload-conf",
-				"-fD:\\IdeaSpace\\sample-log\\log-flume\\src\\test\\resources\\logTailSource-test.conf"};
+		String[] conf = new String[]{"-nagent1","-no-reload-conf","-fD:\\IdeaSpace\\sample-log\\log-flume\\src\\test\\resources\\logTailSource-test.conf"};
+				//"-fD:\\IdeaSpace\\sample-log\\log-flume\\src\\test\\resources\\logTailSource-test.conf"};
+
 
 		Application.main(conf);
 	}

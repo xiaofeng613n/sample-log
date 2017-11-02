@@ -6,10 +6,14 @@ import com.google.gson.reflect.TypeToken;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +31,20 @@ public class PositionFileManager
 
 	private Map<String,PositionInfo> inode2PositionInfo;
 	private List<String> watchDirs;
+
+	public PositionFileManager(String positionFile,List<String> watchDirs) throws IOException
+	{
+		this.watchDirs = watchDirs;
+		Path path = Paths.get(positionFile);
+		Files.createDirectories(path.getParent());
+
+		this.randomAccessFile = new RandomAccessFile(new File(positionFile),"rw");
+
+		reloadPositionInfo();
+
+		syncDisk();
+	}
+
 
 	public void updatePosition(String inode, long offset)
 	{
@@ -108,6 +126,16 @@ public class PositionFileManager
 
 	private List<String> getAllInode(List<String> watchDirs)
 	{
-		return null;
+
+		final List<String> allInode = new ArrayList<String>();
+		for (String dir : watchDirs) {
+			final String filterKey = "[^]";//this.getFilterKeyByPath(dir, dirConfig);
+			final List<String> nodes = TailFileHelper.getAllInode(dir, filterKey);
+			if (nodes != null) {
+				//logger.info("dir=[" + dir + "],realPath is=[" + TailFileHelper.getRealPath(dir) + "],filterKey=[" + filterKey + "],nodes=" + nodes.toString() + "");
+				allInode.addAll(nodes);
+			}
+		}
+		return allInode;
 	}
 }
