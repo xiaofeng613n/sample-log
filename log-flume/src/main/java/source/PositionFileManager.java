@@ -101,14 +101,27 @@ public class PositionFileManager
 
 		for (String inode : allInode)
 		{
-			if( ! inode2PositionInfo.containsKey(inode) )
+			if( !containsInode(inode,positionInfoList) )
 			{
 				PositionInfo newPostionInfo = new PositionInfo(inode,getFileName(inode,this.watchDirs),0);
-				inode2PositionInfo.put(inode,newPostionInfo);
+				//node2PositionInfo.put(inode,newPostionInfo);
+				positionInfoList.add(newPostionInfo);
 			}
 			//
 		}
 		removePositionInfoIfFileNodeNotExist(positionInfoList,allInode);
+	}
+
+	private boolean containsInode(String inode, List<PositionInfo> positionInfoList)
+	{
+		for (PositionInfo positionInfo : positionInfoList)
+		{
+			if( positionInfo.getInode().equals(inode))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private String getFileName(String inode, List<String> directorys) {

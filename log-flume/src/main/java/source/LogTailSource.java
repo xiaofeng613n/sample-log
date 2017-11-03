@@ -1,5 +1,6 @@
 package source;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.apache.flume.Context;
@@ -11,9 +12,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by xiao on 2017/11/1.
@@ -24,17 +29,29 @@ public class LogTailSource extends AbstractSource implements Configurable,EventD
 
 	private String positionFile;
 
-	private String watchDirs;
+	private List<String> watchDirList;
 
-	private ExecutorService executorService = Executors.newScheduledThreadPool(1);
+	//监控目录列表
+	private Map<String, ImmutableMap<String, String>> dir2Properties = new HashMap<String, ImmutableMap<String, String>>();
+
+	private ScheduledExecutorService timer = Executors.newSingleThreadScheduledExecutor();
 
 	public void configure(Context context)
 	{
 		logger.info("");
 		positionFile = context.getString("positionFile");
-		watchDirs = context.getString("watchDirs");
-		ImmutableMap<String, String> m =  context.getSubProperties("watchDirs." + watchDirs + ".");
-		watchDirs = "D:/atempData";
+		final String watchDirs = context.getString("watchDirs");
+		final String[] dirArray = watchDirs.split(",");
+		for (String dir : dirArray)
+		{
+			final ImmutableMap<String,String> subProperties = context.getSubProperties("watchDirs." + dir + ".");
+			String path = subProperties.get("path");
+			if(Strings.isNullOrEmpty(path) || "/".equals(path))
+			{
+				return;
+			}
+			dir2Properties.put(path, subProperties);
+		}
 	}
 
 	@Override
@@ -43,29 +60,20 @@ public class LogTailSource extends AbstractSource implements Configurable,EventD
 		super.start();
 		PositionFileManager positionFileManager = null;
 		try {
-			positionFileManager = new PositionFileManager(positionFile, Lists.newArrayList(watchDirs));
+			positionFileManager = new PositionFileManager(positionFile, Lists.newArrayList(dir2Properties.keySet()));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		LogReaderWorker logReaderWorker = new LogReaderWorker(positionFileManager,getChannelProcessor());
 		LogWatcher logWatcher = new LogWatcher(positionFileManager,logReaderWorker);
 
-		/*executorService.submit(()->{
-			try
-			{
-				logReaderWorker.fireAllFileReadEvent();
-				positionFileManager.syncDisk();
-				logWatcher.reloadLogFiles();
-			}
-			catch (IOException e)
-			{
-				e.printStackTrace();
-			}
+		/*timer.scheduleAtFixedRate(()->{
 
-		});
-*/
+
+		},1000,3000, TimeUnit.MICROSECONDS);*/
+
 		try {
-			logWatcher.reloadLogFiles();
+			//logWatcher.reloadLogFiles();
 
 			logReaderWorker.fireAllFileReadEvent();
 			positionFileManager.syncDisk();
@@ -73,49 +81,25 @@ public class LogTailSource extends AbstractSource implements Configurable,EventD
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		try
-		{
-			logReaderWorker.fireAllFileReadEvent();
-			positionFileManager.syncDisk();
-			logWatcher.reloadLogFiles();
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-		}
 
 		logReaderWorker.start();
-		/*getChannelProcessor().processEvent(new Event()
-		{
-			@Override
-			public Map<String, String> getHeaders()
-			{
-				return null;
-			}
 
-			@Override
-			public void setHeaders(Map<String, String> map)
-			{
-
-			}
-
-			@Override
-			public byte[] getBody()
-			{
-				return "xx".getBytes();
-			}
-
-			@Override
-			public void setBody(byte[] bytes)
-			{
-
-			}
-		});*/
 	}
 
 	@Override
 	public synchronized void stop()
 	{
 		super.stop();
+	}
+
+	public static class Task implements Runnable
+	{
+
+
+		@Override
+		public void run()
+		{
+
+		}
 	}
 }

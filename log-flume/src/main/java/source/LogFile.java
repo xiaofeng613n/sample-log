@@ -18,20 +18,6 @@ import java.nio.charset.Charset;
 @Slf4j
 public class LogFile
 {
-	/*private String inode;
-	private String fileName;
-	private String parentPath;
-	private long offset;
-	//private Buffe
-	public static void main(String[] args)
-	{
-		RandomAccessFile randomAccessFile = new RandomAccessFile("","");
-		randomAccessFile.getChannel();
-	}
-
-	public String nextLine()
-	{
-	}*/
 	private static final Logger logger = LoggerFactory.getLogger(LogFile.class);
 
 	private static final int Enter_Ascii = 10;
