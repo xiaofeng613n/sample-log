@@ -30,9 +30,12 @@ public class LogReaderWorker extends Thread
 
 	private ChannelProcessor channelProcessor;
 
-	private PositionFileManager positionFileManager;
+	//private PositionFileManager positionFileManager;
 
-	private Map<String,LogFile> filemap = Maps.newConcurrentMap();
+	//private Map<String,LogFile> filemap = Maps.newConcurrentMap();
+
+
+	private FileManager fileManager;
 
 	public LogReaderWorker(PositionFileManager positionFileManager,ChannelProcessor channelProcessor)
 	{
@@ -48,7 +51,8 @@ public class LogReaderWorker extends Thread
 			try
 			{
 				final String inode = readEventQueue.take();
-				final LogFile logFile = filemap.get(inode);
+				//final LogFile logFile = filemap.get(inode);
+				final LogFile logFile = fileManager.getLogFile(inode);
 				if( logFile == null)
 				{
 					continue;
