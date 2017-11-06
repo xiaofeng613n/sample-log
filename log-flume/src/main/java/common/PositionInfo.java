@@ -1,4 +1,4 @@
-package source;
+package common;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -14,5 +14,4 @@ public class PositionInfo
 	private String inode;
 	private String filename;
 	private long offset;
-
 }

@@ -1,4 +1,4 @@
-package source;
+package common;
 
 import com.google.common.base.Strings;
 //import common.ErrorLogCollector;
@@ -13,8 +13,6 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  *
@@ -23,6 +21,17 @@ public class TailFileHelper
 {
 
     private static final Logger logger = LoggerFactory.getLogger(TailFileHelper.class);
+
+
+    public static String getFileName(String inode, List<String> directorys) {
+        for (String dir : directorys) {
+            final String fileName = TailFileHelper.getFileName(dir, inode);
+            if (fileName != null) {
+                return fileName;
+            }
+        }
+        return null;
+    }
 
     public static String getFileName(String directory, String inode) {
         if (inode == null || !isExist(directory) || !isDirectory(directory)) {
@@ -166,4 +175,5 @@ public class TailFileHelper
 
         return inode;
     }
+
 }

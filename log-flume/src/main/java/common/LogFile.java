@@ -1,14 +1,11 @@
-package source;
+package common;
 
-import common.BufferedRandomAccessFile;
 import lombok.Data;
-import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
 
 /**

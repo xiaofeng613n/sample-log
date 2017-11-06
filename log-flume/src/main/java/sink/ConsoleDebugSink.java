@@ -34,7 +34,7 @@ public class ConsoleDebugSink extends AbstractSink implements Configurable
 			event = channel.take();
 			if( event != null)
 			{
-				logger.info("EVENT:{}",event );
+				logger.info("EVENT:{},body:{}",event,new String(event.getBody()));
 			}
 			else
 			{
@@ -45,6 +45,9 @@ public class ConsoleDebugSink extends AbstractSink implements Configurable
 		catch (Exception e)
 		{
 			transaction.rollback();
+		}
+		finally {
+			transaction.close();
 		}
 		return result;
 	}

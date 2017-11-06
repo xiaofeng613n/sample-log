@@ -3,6 +3,7 @@ package source;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.flume.Context;
 import org.apache.flume.Event;
 import org.apache.flume.EventDrivenSource;
@@ -15,10 +16,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by xiao on 2017/11/1.
@@ -29,16 +29,16 @@ public class LogTailSource extends AbstractSource implements Configurable,EventD
 
 	private String positionFile;
 
-	private List<String> watchDirList;
-
 	//监控目录列表
-	private Map<String, ImmutableMap<String, String>> dir2Properties = new HashMap<String, ImmutableMap<String, String>>();
+	private Map<String, ImmutableMap<String, String>> dir2Properties = Maps.newHashMap();
 
 	private ScheduledExecutorService timer = Executors.newSingleThreadScheduledExecutor();
 
+	private FileManager fileManager;
+
 	public void configure(Context context)
 	{
-		logger.info("");
+		logger.info("LogTailSource:configure:load conf start");
 		positionFile = context.getString("positionFile");
 		final String watchDirs = context.getString("watchDirs");
 		final String[] dirArray = watchDirs.split(",");
@@ -52,35 +52,35 @@ public class LogTailSource extends AbstractSource implements Configurable,EventD
 			}
 			dir2Properties.put(path, subProperties);
 		}
+		logger.info("LogTailSource:configure:load conf end");
 	}
 
 	@Override
 	public synchronized void start()
 	{
 		super.start();
-		PositionFileManager positionFileManager = null;
-		try {
-			positionFileManager = new PositionFileManager(positionFile, Lists.newArrayList(dir2Properties.keySet()));
-		} catch (IOException e) {
+		try
+		{
+			fileManager = new FileManager(positionFile, Lists.newArrayList(dir2Properties.keySet()));
+		}
+		catch (IOException e)
+		{
 			e.printStackTrace();
 		}
-		LogReaderWorker logReaderWorker = new LogReaderWorker(positionFileManager,getChannelProcessor());
-		LogWatcher logWatcher = new LogWatcher(positionFileManager,logReaderWorker);
 
-		/*timer.scheduleAtFixedRate(()->{
+		LogReaderWorker logReaderWorker = new LogReaderWorker(getChannelProcessor(),fileManager);
 
 
-		},1000,3000, TimeUnit.MICROSECONDS);*/
-
-		try {
-			//logWatcher.reloadLogFiles();
-
+		timer.scheduleAtFixedRate(()->{
+			logger.info("start:");
+			logReaderWorker.setReloadingFile(true);
+			fileManager.reloadLogFile();
 			logReaderWorker.fireAllFileReadEvent();
-			positionFileManager.syncDisk();
-			logWatcher.reloadLogFiles();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+			logReaderWorker.setReloadingFile(false);
+			logger.info("end:");
+
+		},5,10, TimeUnit.SECONDS);
+
 
 		logReaderWorker.start();
 
@@ -90,14 +90,11 @@ public class LogTailSource extends AbstractSource implements Configurable,EventD
 	public synchronized void stop()
 	{
 		super.stop();
-	}
-
-	public static class Task implements Runnable
-	{
-
-
-		@Override
-		public void run()
+		try
+		{
+			fileManager.close();
+		}
+		catch (IOException e)
 		{
 
 		}
